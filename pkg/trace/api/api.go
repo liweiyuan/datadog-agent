@@ -339,6 +339,10 @@ const (
 	// headerComputedStats specifies whether the client has computed stats so that the agent
 	// doesn't have to.
 	headerComputedStats = "Datadog-Client-Computed-Stats"
+
+	// headderDroppedP0s contains the number of P0 trace chunks dropped by the client.
+	// This value is used to adjust priority rates computed by the agent.
+	headerDroppedP0s = "Datadog-Client-Dropped-P0-Traces"
 )
 
 func (r *HTTPReceiver) tagStats(v Version, req *http.Request) *info.TagStats {
@@ -470,6 +474,13 @@ func (r *HTTPReceiver) handleTraces(v Version, w http.ResponseWriter, req *http.
 		ClientComputedTopLevel: req.Header.Get(headerComputedTopLevel) != "",
 		ClientComputedStats:    req.Header.Get(headerComputedStats) != "",
 	}
+
+	if droppedP0s := req.Header.Get(headerDroppedP0s); droppedP0s != "" {
+		count, err := strconv.ParseInt(droppedP0s, 10, 64)
+		if err != nil {
+			payload.ClientDroppedP0s = count
+		}
+	}
 	select {
 	case r.out <- payload:
 		// ok
@@ -507,6 +518,8 @@ type Payload struct {
 	// ClientComputedStats reports whether the client has computed and sent over stats
 	// so that the agent doesn't have to.
 	ClientComputedStats bool
+	// ClientDroppedP0s reports the number of P0 traces chunks dropped by the client
+	ClientDroppedP0s int64
 }
 
 // handleServices handle a request with a list of several services

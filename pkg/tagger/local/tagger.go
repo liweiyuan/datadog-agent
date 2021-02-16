@@ -215,8 +215,10 @@ func (t *Tagger) Stop() error {
 	return nil
 }
 
-// Tag returns tags for a given entity
-func (t *Tagger) Tag(entity string, cardinality collectors.TagCardinality) ([]string, error) {
+// TagReadOnly returns a read only list of tags for a given entity. No copy of
+// the internal data is made. The caller guarantes that no modification will be
+// made to the returned slice.
+func (t *Tagger) TagReadOnly(entity string, cardinality collectors.TagCardinality) ([]string, error) {
 	telemetry.Queries.Inc(collectors.TagCardinalityToString(cardinality))
 
 	if entity == "" {
@@ -226,7 +228,7 @@ func (t *Tagger) Tag(entity string, cardinality collectors.TagCardinality) ([]st
 
 	if len(sources) == len(t.fetchers) {
 		// All sources sent data to cache
-		return copyArray(cachedTags), nil
+		return cachedTags, nil
 	}
 	// Else, partial cache miss, query missing data
 	// TODO: get logging on that to make sure we should optimize
@@ -272,9 +274,17 @@ IterCollectors:
 	}
 	t.RUnlock()
 
-	computedTags := utils.ConcatenateTags(tagArrays)
+	return utils.ConcatenateTags(tagArrays), nil
+}
 
-	return copyArray(computedTags), nil
+// Tag returns tags for a given entity
+func (t *Tagger) Tag(entity string, cardinality collectors.TagCardinality) ([]string, error) {
+	tags, err := t.TagReadOnly(entity, cardinality)
+	if err != nil {
+		return nil, err
+	}
+
+	return copyArray(tags), nil
 }
 
 // Standard returns standard tags for a given entity

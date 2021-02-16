@@ -62,9 +62,18 @@ func Init() {
 
 // Tag queries the defaultTagger to get entity tags from cache or sources.
 // It can return tags at high cardinality (with tags about individual containers),
-// or at orchestrator cardinality (pod/task level)
+// or at orchestrator cardinality (pod/task level).
 func Tag(entity string, cardinality collectors.TagCardinality) ([]string, error) {
 	return defaultTagger.Tag(entity, cardinality)
+}
+
+// TagReadOnly queries the defaultTagger to get entity tags from cache or
+// sources.  It can return tags at high cardinality (with tags about individual
+// containers), or at orchestrator cardinality (pod/task level). No copy will
+// be made of the internal data, the caller gurantees that no modifications
+// will be made to the slice.
+func TagReadOnly(entity string, cardinality collectors.TagCardinality) ([]string, error) {
+	return defaultTagger.TagReadOnly(entity, cardinality)
 }
 
 // TagWithHash is similar to Tag but it also computes and returns the hash of the tags found
@@ -104,6 +113,13 @@ func AgentTags(cardinality collectors.TagCardinality) ([]string, error) {
 // OrchestratorScopeTag queries tags for orchestrator scope (e.g. task_arn in ECS Fargate)
 func OrchestratorScopeTag() ([]string, error) {
 	return defaultTagger.Tag(collectors.OrchestratorScopeEntityID, collectors.OrchestratorCardinality)
+}
+
+// OrchestratorScopeTagReadOnly queries tags for orchestrator scope (e.g.
+// task_arn in ECS Fargate). No copy will be made of the internal data, the
+// caller gurantees that no modifications will be made to the slice.
+func OrchestratorScopeTagReadOnly() ([]string, error) {
+	return defaultTagger.TagReadOnly(collectors.OrchestratorScopeEntityID, collectors.OrchestratorCardinality)
 }
 
 // Stop queues a stop signal to the defaultTagger

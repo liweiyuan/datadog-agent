@@ -129,6 +129,11 @@ func (t *Tagger) Tag(entityID string, cardinality collectors.TagCardinality) ([]
 	return []string{}, nil
 }
 
+// Tag returns tags for a given entity at the desired cardinality.
+func (t *Tagger) TagReadOnly(entityID string, cardinality collectors.TagCardinality) ([]string, error) {
+	return t.Tag(entityID, cardinality)
+}
+
 // Standard returns the standard tags for a given entity.
 func (t *Tagger) Standard(entityID string) ([]string, error) {
 	entity, err := t.store.getEntity(entityID)

@@ -13,6 +13,7 @@ type Tagger interface {
 	Stop() error
 
 	Tag(entity string, cardinality collectors.TagCardinality) ([]string, error)
+	TagReadOnly(entity string, cardinality collectors.TagCardinality) ([]string, error)
 	Standard(entity string) ([]string, error)
 	List(cardinality collectors.TagCardinality) response.TaggerListResponse
 

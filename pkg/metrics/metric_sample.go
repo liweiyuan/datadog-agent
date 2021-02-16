@@ -107,8 +107,7 @@ func (m *MetricSample) GetHost() string {
 
 func findOriginTags(origin string, tags []string) []string {
 	if origin != listeners.NoOrigin {
-		originTags, err := tagger.Tag(origin, tagger.DogstatsdCardinality)
-		if err != nil {
+		if originTags, err := tagger.TagReadOnly(origin, tagger.DogstatsdCardinality); err != nil {
 			log.Errorf(err.Error())
 		} else {
 			tags = append(tags, originTags...)
@@ -117,8 +116,7 @@ func findOriginTags(origin string, tags []string) []string {
 
 	// Include orchestrator scope tags if the cardinality is set to orchestrator
 	if tagger.DogstatsdCardinality == collectors.OrchestratorCardinality {
-		orchestratorScopeTags, err := tagger.OrchestratorScopeTag()
-		if err != nil {
+		if orchestratorScopeTags, err := tagger.OrchestratorScopeTagReadOnly(); err != nil {
 			log.Error(err.Error())
 		} else {
 			tags = append(tags, orchestratorScopeTags...)
@@ -134,7 +132,7 @@ func EnrichTags(tagsBuffer []string, originID string, k8sOriginID string) []stri
 	}
 
 	if k8sOriginID != "" {
-		if entityTags, err := tagger.Tag(k8sOriginID, tagger.DogstatsdCardinality); err == nil {
+		if entityTags, err := tagger.TagReadOnly(k8sOriginID, tagger.DogstatsdCardinality); err == nil {
 			tagsBuffer = append(tagsBuffer, entityTags...)
 		} else {
 			tlmUDPOriginDetectionError.Inc()

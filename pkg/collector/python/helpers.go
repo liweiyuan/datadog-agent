@@ -83,13 +83,18 @@ var (
 // newStickyLock registers the current thread with the interpreter and locks
 // the GIL. It also sticks the goroutine to the current thread so that a
 // subsequent call to `Unlock` will unregister the very same thread.
-func newStickyLock() *stickyLock {
+func newStickyLock() (*stickyLock, error) {
 	runtime.LockOSThread()
+
+	if rtloader == nil {
+		return nil, fmt.Errorf("GIL lock attempted when rtloader is not initialized")
+	}
+
 	state := C.ensure_gil(rtloader)
 	return &stickyLock{
 		gstate: state,
 		locked: 1,
-	}
+	}, nil
 }
 
 // unlock deregisters the current thread from the interpreter, unlocks the GIL
@@ -120,11 +125,11 @@ func cStringArrayToSlice(array **C.char) []string {
 
 // GetPythonIntegrationList collects python datadog installed integrations list
 func GetPythonIntegrationList() ([]string, error) {
-	if rtloader == nil {
-		return nil, fmt.Errorf("rtloader is not initialized")
+	glock, err := newStickyLock()
+	if err != nil {
+		return nil, err
 	}
 
-	glock := newStickyLock()
 	defer glock.unlock()
 
 	integrationsList := C.get_integration_list(rtloader)
@@ -151,11 +156,11 @@ func GetPythonIntegrationList() ([]string, error) {
 
 // GetIntepreterMemoryUsage collects a python interpreter memory usage snapshot
 func GetPythonInterpreterMemoryUsage() ([]*PythonStats, error) {
-	if rtloader == nil {
-		return nil, fmt.Errorf("rtloader is not initialized")
+	glock, err := newStickyLock()
+	if err != nil {
+		return nil, err
 	}
 
-	glock := newStickyLock()
 	defer glock.unlock()
 
 	usage := C.get_interpreter_memory_usage(rtloader)
@@ -210,11 +215,10 @@ func GetPythonInterpreterMemoryUsage() ([]*PythonStats, error) {
 
 // SetPythonPsutilProcPath sets python psutil.PROCFS_PATH
 func SetPythonPsutilProcPath(procPath string) error {
-	if rtloader == nil {
-		return fmt.Errorf("rtloader is not initialized")
+	glock, err := newStickyLock()
+	if err != nil {
+		return err
 	}
-
-	glock := newStickyLock()
 	defer glock.unlock()
 
 	module := TrackedCString(psutilModule)

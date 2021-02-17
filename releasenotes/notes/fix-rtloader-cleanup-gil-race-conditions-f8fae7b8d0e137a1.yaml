@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Fix agent crashes from Python interpreter being freed too early

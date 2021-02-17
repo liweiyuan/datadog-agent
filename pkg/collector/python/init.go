@@ -348,7 +348,11 @@ func Initialize(paths ...string) error {
 	}
 
 	// Lock the GIL
-	glock := newStickyLock()
+	glock, err := newStickyLock()
+	if err != nil {
+		return err
+	}
+
 	pyInfo := C.get_py_info(rtloader)
 	glock.unlock()
 
@@ -372,9 +376,16 @@ func Initialize(paths ...string) error {
 
 // Destroy destroys the loaded Python interpreter initialized by 'Initialize'
 func Destroy() {
-	if rtloader != nil {
-		C.destroy(rtloader)
+	// Sanity check - this should ideally never happen
+	if rtloader == nil {
+		log.Warn("Python runtime already destroyed. Ignoring action.")
+		return
 	}
+
+	log.Info("Destroying Python runtime")
+	C.destroy(rtloader)
+	rtloader = nil
+	log.Info("Python runtime destroyed")
 }
 
 // GetRtLoader returns the underlying rtloader_t struct. This is meant for testing and

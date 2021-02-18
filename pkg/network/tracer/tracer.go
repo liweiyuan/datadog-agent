@@ -235,10 +235,18 @@ func NewTracer(config *config.Config) (*Tracer, error) {
 
 	conntracker := netlink.NewNoOpConntracker()
 	if config.EnableConntrack {
-		if c, err := netlink.NewConntracker(config.ProcRoot, config.ConntrackMaxStateSize, config.ConntrackRateLimit, config.EnableConntrackAllNamespaces); err != nil {
-			log.Warnf("could not initialize conntrack, tracer will continue without NAT tracking: %s", err)
+		if runtimeTracer {
+			if c, err := NewEBPFConntracker(config); err != nil {
+				log.Warnf("could not initialize conntrack, tracer will continue without NAT tracking: %s", err)
+			} else {
+				conntracker = c
+			}
 		} else {
-			conntracker = c
+			if c, err := netlink.NewConntracker(config.ProcRoot, config.ConntrackMaxStateSize, config.ConntrackRateLimit, config.EnableConntrackAllNamespaces); err != nil {
+				log.Warnf("could not initialize conntrack, tracer will continue without NAT tracking: %s", err)
+			} else {
+				conntracker = c
+			}
 		}
 	}
 

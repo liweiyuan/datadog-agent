@@ -14,8 +14,9 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/DataDog/datadog-agent/pkg/security/rules"
 	"github.com/pkg/errors"
+
+	"github.com/DataDog/datadog-agent/pkg/security/rules"
 )
 
 func openTestFile(test *testModule, filename string, flags int) (int, string, error) {
@@ -41,7 +42,7 @@ func openTestFile(test *testModule, filename string, flags int) (int, string, er
 func TestOpenBasenameApproverFilter(t *testing.T) {
 	rule := &rules.RuleDefinition{
 		ID:         "test_rule",
-		Expression: `open.filename == "{{.Root}}/test-oba-1"`,
+		Expression: `open.file.path == "{{.Root}}/test-oba-1"`,
 	}
 
 	test, err := newTestModule(nil, []*rules.RuleDefinition{rule}, testOpts{wantProbeEvents: true})
@@ -76,7 +77,7 @@ func TestOpenBasenameApproverFilter(t *testing.T) {
 func TestOpenParentDiscarderFilter(t *testing.T) {
 	rule := &rules.RuleDefinition{
 		ID:         "test_rule",
-		Expression: `open.filename =~ "/usr/bin" && open.flags & (O_CREAT | O_SYNC) > 0`,
+		Expression: `open.file.path =~ "/usr/bin" && open.flags & (O_CREAT | O_SYNC) > 0`,
 	}
 
 	test, err := newTestModule(nil, []*rules.RuleDefinition{rule}, testOpts{wantProbeEvents: true})
@@ -158,7 +159,7 @@ func TestOpenFlagsApproverFilter(t *testing.T) {
 func TestOpenProcessPidDiscarder(t *testing.T) {
 	rule := &rules.RuleDefinition{
 		ID:         "test_rule",
-		Expression: `open.filename =="{{.Root}}/test-oba-1" && process.filename == "/bin/cat"`,
+		Expression: `open.file.path =="{{.Root}}/test-oba-1" && process.file.path == "/bin/cat"`,
 	}
 
 	test, err := newTestModule(nil, []*rules.RuleDefinition{rule}, testOpts{wantProbeEvents: true})
@@ -193,7 +194,7 @@ func TestOpenProcessPidDiscarder(t *testing.T) {
 func TestInvalidDiscarderFilter(t *testing.T) {
 	rule := &rules.RuleDefinition{
 		ID:         "test_rule",
-		Expression: `open.filename =~ "/usr/bin" && open.flags & (O_CREAT | O_SYNC) > 0`,
+		Expression: `open.file.path =~ "/usr/bin" && open.flags & (O_CREAT | O_SYNC) > 0`,
 	}
 
 	test, err := newTestModule(nil, []*rules.RuleDefinition{rule}, testOpts{wantProbeEvents: true})

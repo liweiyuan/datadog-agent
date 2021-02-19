@@ -742,6 +742,8 @@ func NewProbe(config *config.Config, client *statsd.Client) (*Probe, error) {
 			Value: getSuperBlockMagicOffset(p),
 		},
 	)
+	p.managerOptions.ConstantEditors = append(p.managerOptions.ConstantEditors, erpc.GetConstants()...)
+	p.managerOptions.ConstantEditors = append(p.managerOptions.ConstantEditors, DiscarderConstants...)
 
 	resolvers, err := NewResolvers(p, client)
 	if err != nil {

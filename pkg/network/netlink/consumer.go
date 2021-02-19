@@ -218,9 +218,15 @@ func (c *Consumer) DumpTable(family uint8) <-chan Event {
 				log.Errorf("error dumping conntrack table, could not get network namespaces: %s", err)
 				return
 			}
+
+			defer func() {
+				for _, ns := range nss {
+					_ = ns.Close()
+				}
+			}()
 		}
 
-		rootNS, err := netns.GetFromPath(fmt.Sprintf("%s/1/ns/net", c.procRoot))
+		rootNS, err := util.GetRootNetNamespace(c.procRoot)
 		if err != nil {
 			log.Errorf("error dumping conntrack table, could not get root namespace: %s", err)
 			return
@@ -228,7 +234,7 @@ func (c *Consumer) DumpTable(family uint8) <-chan Event {
 
 		defer func() {
 			if rootNS.IsOpen() {
-				rootNS.Close()
+				_ = rootNS.Close()
 			}
 		}()
 
@@ -269,13 +275,9 @@ func (c *Consumer) DumpTable(family uint8) <-chan Event {
 }
 
 func (c *Consumer) dumpTable(family uint8, output chan Event, ns netns.NsHandle) error {
-	defer func() {
-		_ = ns.Close()
-	}()
-
 	return util.WithNS(c.procRoot, ns, func() error {
 
-		log.Tracef("dumping table for ns %s", ns)
+		log.Tracef("dumping table for ns %s family %d", ns, family)
 
 		sock, err := NewSocket()
 		if err != nil {
